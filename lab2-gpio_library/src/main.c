@@ -12,7 +12,7 @@
 
 /* Defines -----------------------------------------------------------*/
 #define LED_GREEN PB5   // PB5 is AVR pin where green on-board LED 
-#define LED_BLUE  PB0
+#define BUTTON PD0
                         // is connected
 #define SHORT_DELAY 250 // Delay in milliseconds
 #ifndef F_CPU
@@ -22,14 +22,15 @@
 /* Includes ----------------------------------------------------------*/
 #include <avr/io.h>     // AVR device-specific IO definitions
 #include <util/delay.h> // Functions for busy-wait delay loops
-
+#include <gpio.h>
+#include <stdio.h>
 
 // -----
 // This part is needed to use Arduino functions but also physical pin
 // names. We are using Arduino-style just to simplify the first lab.
-#include "Arduino.h"
+// #include "Arduino.h"
 #define PB5 13          // In Arduino world, PB5 is called "13"
-#define PB0 8
+#define PD0 4
 // -----
 
 
@@ -43,37 +44,23 @@
 int main(void)
 {
 
-    uint8_t led_value = LOW;  // Local variable to keep LED status
-
     // Set pin where on-board LED is connected as output
-    pinMode(LED_GREEN, OUTPUT);
-    pinMode(LED_BLUE, OUTPUT);
-
-
+    // pinMode(LED_GREEN, OUTPUT);
+  	GPIO_mode_output(&DDRB, LED_GREEN);
+    GPIO_mode_input_pullup(&DDRD, BUTTON);
+    uint8_t temp = 1;
     // Infinite loop
     while (1)
     {
+      temp = GPIO_read(&PIND, BUTTON);
+      if (temp == 0) 
+      {
+          GPIO_write_high(&PORTB, LED_GREEN);
+          _delay_ms(250);
 
-
-        led_value = LOW;
-        digitalWrite(LED_GREEN, led_value);
-
-        led_value = HIGH;
-        digitalWrite(LED_GREEN, led_value);
-        _delay_ms(250);
-        led_value = LOW;
-        digitalWrite(LED_GREEN, led_value);
-
-        led_value = HIGH;
-        digitalWrite(LED_GREEN, led_value);
-        _delay_ms(750);
-        led_value = LOW;
-        digitalWrite(LED_GREEN, led_value);
-
-         _delay_ms(2000);
-
-
-
+          GPIO_write_low(&PORTB, LED_GREEN);
+          _delay_ms(250);
+      }
     }
 
     // Will never reach this
