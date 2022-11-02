@@ -116,12 +116,11 @@ ISR(ADC_vect)
     itoa(voltage, string, 10);
     lcd_gotoxy(8, 0); 
     lcd_puts(string);
-    lcd_puts("mV");
 
     // Put ADC value in hexadecimal
-    //itoa(value, string, 16);
-    //lcd_gotoxy(13, 0); 
-    //lcd_puts(string);
+    itoa(value, string, 16);
+    lcd_gotoxy(13, 0); 
+    lcd_puts(string);
 
      
     // Put button name
