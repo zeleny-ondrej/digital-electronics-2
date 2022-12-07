@@ -32,8 +32,10 @@
 #include "timer.h"          // Timer library for AVR-GCC
 #include <lcd.h>            // Peter Fleury's LCD library
 #include <stdlib.h>         // C library. Needed for number conversions
+#include <uart.h>
 
-
+#define A 0
+#define B 1
 /* Function definitions ----------------------------------------------*/
 /**********************************************************************
  * Function: Main function where the program execution begins
@@ -43,42 +45,24 @@
  **********************************************************************/
 int main(void)
 {
-    // Initialize display
-    lcd_init(LCD_DISP_ON_CURSOR_BLINK);
-
-    // Put string(s) on LCD screen
-    uint8_t customChar[8] = {
-        0b00111,
-        0b01110,
-        0b11100,
-        0b11000,
-        0b11100,
-        0b01110,
-        0b00111,
-        0b00011
-    };
-
-    // Initialize display
-    lcd_init(LCD_DISP_ON);
-
-    lcd_command(1<<LCD_CGRAM);       // Set addressing to CGRAM (Character Generator RAM)
-                                     // ie to individual lines of character patterns
-    for (uint8_t i = 0; i < 8; i++)  // Copy new character patterns line by line to CGRAM
-        lcd_data(customChar[i]);
-    lcd_command(1<<LCD_DDRAM);       // Set addressing back to DDRAM (Display Data RAM)
-                                     // ie to character codes
-
-    // Display symbol with Character code 0
-    lcd_gotoxy(12,1);
-    lcd_putc(0x00);
+    // Initialize USART to asynchronous, 8N1, 9600
+    uart_init(UART_BAUD_SELECT(9600, F_CPU));
+    DDRB &= ~(1<<A);
+    DDRB &= ~(1<<B);
+    PORTB &= ~(1<<A);
+    PORTB &= ~(1<<B);
 
     // Configuration of 8-bit Timer/Counter2 for Stopwatch update
     // Set the overflow prescaler to 16 ms and enable interrupt
-    TIM2_overflow_16ms();
-    TIM2_overflow_interrupt_enable();
+    TIM0_overflow_262ms();
+    TIM0_overflow_interrupt_enable();
 
     // Enables interrupts by setting the global interrupt mask
     sei();
+
+    // Put strings to ringbuffer for transmitting via UART
+    
+
 
     // Infinite loop
     while (1)
@@ -98,60 +82,33 @@ int main(void)
  * Purpose:  Update the stopwatch on LCD screen every sixth overflow,
  *           ie approximately every 100 ms (6 x 16 ms = 100 ms).
  **********************************************************************/
-ISR(TIMER2_OVF_vect)
+ISR(TIMER0_OVF_vect)
 {
-    static uint8_t no_of_overflows = 0;
-    static uint8_t tenths = 0;  // Tenths of a second
-    static uint8_t seconds = 0;  // Second
-    static uint8_t minutes = 0;  // Minutes
-    
-    char string[2];             // String for converted numbers by itoa()
+    static uint8_t A_curr, B_curr, A_prev, B_prev;
+    char string[1];
 
-    no_of_overflows++;
-    if (no_of_overflows >= 6)
+    A_curr = GPIO_read(&PINB, A);
+    B_curr = GPIO_read(&PINB, B);
+
+    if (A_curr == A_prev)
     {
-        // Do this every 6 x 16 ms = 100 ms
-        no_of_overflows = 0;
-
-        tenths++;
-        // Count tenth of seconds 0, 1, ..., 9, 0, 1, ...
-        if (tenths > 9)
+        if (B_curr != B_prev)
         {
-            tenths =0;
-            seconds++;
-            if (seconds > 59)
-            {
-                seconds =0;
-                minutes++;
-            }
-            
+            uart_puts("CW");
+            uart_puts("\r\n");
         }
-
-        lcd_gotoxy(1,0);
-        itoa(minutes, string, 10);        
-        if (minutes < 10)
-            lcd_putc('0');      
-
-        lcd_puts(string);
-        lcd_putc(':');
-
-        itoa(seconds, string, 10);
-        if (seconds < 10)
-            lcd_putc('0');
-        lcd_puts(string);
-
-
-        lcd_putc('.');
-        itoa(tenths, string, 10);
-        lcd_puts(string);
-
-
-        //itoa(tenths, string, 10);  // Convert decimal value to string
-        // Display "00:00.tenths"
-        //lcd_gotoxy(7, 0);
-        //lcd_puts(string);
-
-
     }
-    // Else do nothing and exit the ISR
+    else if (B_curr == B_prev)
+    {
+        if (A_curr != A_prev)
+        {
+            uart_puts("CCW");
+            uart_puts("\r\n");
+        }
+        
+    }
+    
+    B_prev = B_curr;
+    A_prev = A_curr;
+
 }
