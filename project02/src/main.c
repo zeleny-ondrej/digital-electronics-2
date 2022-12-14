@@ -1,31 +1,3 @@
-Skip to content
-Search or jump to…
-Pull requests
-Issues
-Codespaces
-Marketplace
-Explore
- 
-@zeleny-ondrej 
-tomas-fryza
-/
-digital-electronics-2
-Public
-Code
-Issues
-Pull requests
-Actions
-Projects
-Wiki
-Security
-Insights
-digital-electronics-2/labs/06-uart/main.c
-@tomas-fryza
-tomas-fryza Update main.c
-Latest commit 473b923 on Nov 1
- History
- 1 contributor
-70 lines (57 sloc)  2.39 KB
 
 /***********************************************************************
  * 
@@ -62,10 +34,10 @@ Latest commit 473b923 on Nov 1
 int main(void)
 {
   DDRD |= (1<<PD6);
-
-  OCR0A = 63;
+  OCR0A = 110;
   TCCR0A |= (1<<COM0A1) | (1<<COM0A0) | (1<<WGM01) | (1<<WGM00);
-  TCCR0B |= (1<<CS00);
+  TCCR0B |= (1<<CS02);
+
 
   // Infinite loop
   while (1)
